@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartice za učenje - Geografija</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f7f6; /* Svetlo siva za ozadje */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333; /* Temnejša barva za besedilo za boljši kontrast */
+        }
+
+        .container {
+            text-align: center;
+            background-color: #ffffff; /* Bela za vsebnik */
+            padding: 25px;
+            border-radius: 12px; /* Bolj zaobljeni robovi */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Izrazitejša senca */
+            width: 100%;
+            max-width: 650px; /* Nekoliko širši vsebnik */
+        }
+
+        h1 {
+            color: #005a9c; /* Temno modra za naslov */
+            margin-bottom: 25px;
+        }
+
+        .card-container {
+            perspective: 1200px; /* Povečana perspektiva za boljši 3D učinek */
+            margin-bottom: 25px;
+        }
+
+        .card {
+            width: 100%;
+            height: 300px; /* Povečana višina kartice */
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Gladkejša tranzicija */
+            cursor: pointer;
+            border: 1px solid #d1d9e6; /* Svetlo modro-siva obroba */
+            border-radius: 10px; /* Zaobljeni robovi kartice */
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px; /* Povečan padding */
+            box-sizing: border-box;
+            border-radius: 10px;
+            background-color: #ffffff; /* Bela za sprednjo stran */
+            font-size: 1.3em; /* Povečana pisava */
+            line-height: 1.6; /* Povečan razmik med vrsticami */
+            text-align: center;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: #e8f0fe; /* Zelo svetlo modra za zadnjo stran */
+            color: #005a9c; /* Temno modra za besedilo na zadnji strani */
+        }
+
+        .card-front p, .card-back p {
+            margin: 0;
+        }
+
+        .navigation button {
+            padding: 12px 20px; /* Povečan padding gumbov */
+            margin: 0 12px;
+            font-size: 1.05em; /* Nekoliko večja pisava na gumbih */
+            cursor: pointer;
+            border: none;
+            border-radius: 8px; /* Bolj zaobljeni gumbi */
+            background-color: #007bff; /* Standardna modra za gumbe */
+            color: white;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Tranzicija za hover učinek */
+        }
+
+        .navigation button:hover {
+            background-color: #0056b3; /* Temnejša modra ob hoverju */
+            transform: translateY(-2px); /* Rahel dvig gumba ob hoverju */
+        }
+
+        .navigation button:active {
+            transform: translateY(0px); /* Gumb se vrne na mesto ob kliku */
+        }
+
+        .card-counter {
+            margin-top: 20px;
+            font-size: 1em; /* Jasnejši števec */
+            color: #555;
+        }
+
+        /* Odzivnost za manjše zaslone */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .card {
+                height: 280px; /* Prilagojena višina za manjše zaslone */
+            }
+            .card-front, .card-back {
+                font-size: 1.1em;
+                padding: 15px;
+            }
+            .navigation button {
+                padding: 10px 12px;
+                font-size: 0.95em;
+                margin: 0 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kartice za učenje (Geografija)</h1>
+        <div class="card-container">
+            <div class="card">
+                <div class="card-front">
+                    <p id="question"></p>
+                </div>
+                <div class="card-back">
+                    <p id="answer"></p>
+                </div>
+            </div>
+        </div>
+        <div class="navigation">
+            <button id="prevBtn" title="Prejšnja kartica">Nazaj</button>
+            <button id="flipBtn" title="Pokaži/Skrij odgovor">Pokaži odgovor</button>
+            <button id="nextBtn" title="Naslednja kartica">Naprej</button>
+        </div>
+        <div class="card-counter">
+            Kartica <span id="currentCard">1</span> od <span id="totalCards">50</span>
+        </div>
+    </div>
+    <script>
+        // Podatki za kartice (vprašanja in odgovori)
+        const flashcards = [
+            { question: "Katero glavno mesto je prikazano v Španiji na zemljevidu Južne Evrope?", answer: "Madrid. (stran 2)" },
+            { question: "Na katerem velikem polotoku ležita Španija in Portugalska glede na zemljevid?", answer: "Na Pirenejskem polotoku. (stran 2)" },
+            { question: "Kateri zaliv je prikazan južno od Španije na zemljevidu?", answer: "Gibraltarski zaliv. (stran 2)" },
+            { question: "Kateri otoki so prikazani vzhodno od Španije v Sredozemskem morju na zemljevidu?", answer: "Baleari. (stran 2)" },
+            { question: "Katero glavno mesto pripada Grčiji glede na tabelo?", answer: "Atene. (stran 2)" },
+            { question: "Katero glavno mesto pripada Malti glede na tabelo?", answer: "Valleta. (stran 2)" },
+            { question: "Katero glavno mesto pripada Portugalski glede na tabelo?", answer: "Lizbona. (stran 2)" },
+            { question: "Katero glavno mesto pripada Italiji glede na tabelo?", answer: "Rim. (stran 2)" },
+            { question: "Kako se imenuje morje med Italijo ter Sicilijo in Sardinijo, prikazano na zemljevidu?", answer: "Tirensko morje. (stran 2)" },
+            { question: "Kateri polotok tvori večji del Italije, kot je prikazano na zemljevidu?", answer: "Apeninski polotok. (stran 2)" },
+            { question: "Kateri polotok je na diagramu označen kot \"najbolj razčlenjen del Evrope\"?", answer: "Balkanski polotok. (stran 2)" },
+            { question: "Katera dva večja otoka sta prikazana zahodno od Apeninskega polotoka na zemljevidu?", answer: "Sardinija in Korzika. (stran 2)" },
+            { question: "Katera vrsta podnebja prevladuje v Južni Evropi po zapiskih?", answer: "Sredozemsko podnebje. (stran 3)" },
+            { question: "Kako se imenuje značilno rastlinstvo sredozemskega podnebja, omenjeno v zapiskih?", answer: "Mahija. (stran 3)" },
+            { question: "Naštej dve prilagoditvi rastlinstva na poletne suše v sredozemskem podnebju, omenjeni v zapiskih.", answer: "Voščene vejice in globoke korenine (ali: trdi usnjati listi, dlakavi listi, zimzelene rastline). (stran 3)" },
+            { question: "Kakšno podnebje ima severni del Portugalske po zapiskih?", answer: "Oceansko podnebje. (stran 3)" },
+            { question: "Kako se imenuje nižina v severnem delu Italije, ki je dobila ime po reki Pad, omenjena v zapiskih?", answer: "Padska nižina. (stran 3)" },
+            { question: "Kaj se zgodi z mnogimi rekami v Južni Evropi poleti, kot je zapisano v zapiskih?", answer: "Presahnejo. (stran 3)" },
+            { question: "V kaj se spremenijo reke v Južni Evropi pozimi ali ob deževju, kot je navedeno v zapiskih?", answer: "V hudournike. (stran 3)" },
+            { question: "Med katerimi tremi celinami leži Sredozemsko morje po zapiskih?", answer: "Med Evropo, Afriko in Azijo. (stran 3)" },
+            { question: "Kateri preliv povezuje Sredozemsko morje z Atlantskim oceanom, kot je omenjeno v zapiskih?", answer: "Gibraltarski preliv. (stran 3)" },
+            { question: "Kateri ožini povezujeta Sredozemsko morje s Črnim morjem po zapiskih?", answer: "Bospor in Dardanele. (stran 3)" },
+            { question: "Čigavo čezmorsko ozemlje je Gibraltar po zapiskih?", answer: "Britansko. (stran 3)" },
+            { question: "Kakšna je povprečna globina Gibraltarskega preliva po zapiskih?", answer: "365 m. (stran 4)" },
+            { question: "Kakšno morje je Sredozemsko morje glede na izmenjavo vode z oceanom, kot je opisano v zapiskih?", answer: "Notranje morje (voda se izmenjuje le z Atlantskim oceanom). (stran 4)" },
+            { question: "Kolikšna je slanost Sredozemskega morja v promilih po podatkih v zapiskih?", answer: "38 promilov. (stran 4)" },
+            { question: "Zakaj Sredozemsko morje ni bogato z ribami glede na zapis v zapiskih?", answer: "Zaradi majhne količine planktona. (stran 4)" },
+            { question: "Naštej dva vzroka za onesnaženost Sredozemskega morja, omenjena v zapiskih.", answer: "Ladijski promet (Sueški prekop) in turizem (ali velika naselja, industrija, plastika). (stran 4)" },
+            { question: "Na kakšne plošče je razdeljena zemeljska skorja po zapiskih?", answer: "Na litosferske plošče. (stran 4)" },
+            { question: "Naštej dve posledici premikanja litosferskih plošč, omenjeni v zapiskih.", answer: "Izbruhi ognjenikov in potresi. (stran 5)" },
+            { question: "Kako imenujemo vročo, staljeno kamnino pod zemeljskim površjem po zapiskih?", answer: "Magma. (stran 5)" },
+            { question: "Kako imenujemo staljeno kamnino, ko pride na zemeljsko površje, kot je opisano v zapiskih?", answer: "Lava. (stran 5)" },
+            { question: "Kakšne oblike so ognjeniki najpogosteje po zapiskih?", answer: "Oblike stožčastih vzpetin. (stran 5)" },
+            { question: "Navedi primer aktivnega ognjenika in njegovo lokacijo iz zapiskov.", answer: "Etna (Sicilija, Italija) ali Kilauea (Havaji). (stran 5)" },
+            { question: "Navedi primer mirujočega (spečega) ognjenika in njegovo lokacijo iz zapiskov.", answer: "Vezuv (Italija) ali Yellowstone (ZDA). (stran 5)" },
+            { question: "Kako imenujemo strokovnjake, ki stalno opazujejo ognjenike, kot je omenjeno v zapiskih?", answer: "Vulkanologi. (stran 5)" },
+            { question: "Katera jezikovna skupina prevladuje v Južni Evropi po zapiskih?", answer: "Romanska jezikovna skupina. (stran 6)" },
+            { question: "Navedi dva razloga za slabe pogoje za kmetijstvo v Južni Evropi, omenjena v zapiskih.", answer: "Zaradi goratega površja in pomanjkanja vode. (stran 6)" },
+            { question: "Kako se imenuje način pridobivanja sladke vode iz morske, ki je zelo drag, omenjen v zapiskih?", answer: "Desalinacija. (stran 6)" },
+            { question: "Naštej dve kulturni rastlini, ki ju gojijo v Južni Evropi, omenjeni v zapiskih.", answer: "Oljka in vinska trta (ali agrumi, fige). (stran 6)" },
+            { question: "Katere kmetijske pridelke Italija veliko izvaža po zapiskih?", answer: "Sadje, zelenjavo, oljčno olje. (stran 7)" },
+            { question: "Zakaj so na strmih pobočjih v Južni Evropi gradili kulturne terase, kot piše v zapiskih?", answer: "Da so preprečili odnašanje prsti. (stran 7)" },
+            { question: "Zakaj se je industrija v Južni Evropi počasneje razvijala kot v Zahodni Evropi, glede na zapis v zapiskih?", answer: "Zaradi pomanjkanja surovin. (stran 7)" },
+            { question: "Kateri dve pristanišči sta omenjeni kot primer velikih pristanišč v Južni Evropi v zapiskih?", answer: "Benetke in Genova. (stran 7)" },
+            { question: "Kako imenujemo obliko turizma, kjer veliko število turistov obišče isto območje v istem obdobju, kot je definirano v zapiskih?", answer: "Množični turizem. (stran 7)" },
+            { question: "Naštej tri razloge za razvoj turizma v Južni Evropi, omenjene v zapiskih.", answer: "Toplo morje, vroča poletja, kulinarika (ali bogata kulturna dediščina). (stran 7)" },
+            { question: "Naštej dve pozitivni posledici turizma iz zapiskov.", answer: "Gospodarski razvoj in nova delovna mesta (ali razvoj infrastrukture). (stran 8)" },
+            { question: "Naštej tri negativne posledice turizma iz zapiskov.", answer: "Onesnaženost, prometna gneča, pretirana gradnja (ali spremembe pokrajine, poraba pitne vode, podražitev cen). (stran 8)" },
+            { question: "Katero glavno mesto ima Velika Britanija po zemljevidu?", answer: "London. (stran 9)" },
+            { question: "Naštej tri države, ki sestavljajo Beneluks, razvidne iz zemljevida in omembe v zapiskih.", answer: "Belgija, Nizozemska, Luksemburg. (strani 9 in 10)" }
+        ];
+
+        let currentCardIndex = 0;
+        let isFlipped = false;
+
+        // Pridobivanje HTML elementov
+        const questionEl = document.getElementById('question');
+        const answerEl = document.getElementById('answer');
+        const cardEl = document.querySelector('.card');
+        const flipBtn = document.getElementById('flipBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const currentCardDisplay = document.getElementById('currentCard');
+        const totalCardsDisplay = document.getElementById('totalCards');
+
+        // Funkcija za prikaz trenutne kartice
+        function displayCard() {
+            if (flashcards.length === 0) {
+                questionEl.textContent = "Ni kartic za prikaz.";
+                answerEl.textContent = "";
+                currentCardDisplay.textContent = 0;
+                return;
+            }
+            const cardData = flashcards[currentCardIndex];
+            questionEl.textContent = cardData.question;
+            answerEl.textContent = cardData.answer;
+            
+            // Posodobi stanje obrata kartice in besedilo gumba
+            if (isFlipped) {
+                cardEl.classList.add('flipped');
+                flipBtn.textContent = 'Pokaži vprašanje';
+            } else {
+                cardEl.classList.remove('flipped');
+                flipBtn.textContent = 'Pokaži odgovor';
+            }
+            currentCardDisplay.textContent = currentCardIndex + 1;
+        }
+
+        // Funkcija za obrat kartice
+        function flipCard() {
+            if (flashcards.length === 0) return;
+            isFlipped = !isFlipped;
+            displayCard();
+        }
+
+        // Funkcija za prehod na naslednjo kartico
+        function nextCard() {
+            if (flashcards.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % flashcards.length;
+            isFlipped = false; // Vedno ponastavi na sprednjo stran ob menjavi kartice
+            displayCard();
+        }
+
+        // Funkcija za prehod na prejšnjo kartico
+        function prevCard() {
+            if (flashcards.length === 0) return;
+            currentCardIndex = (currentCardIndex - 1 + flashcards.length) % flashcards.length;
+            isFlipped = false; // Vedno ponastavi na sprednjo stran ob menjavi kartice
+            displayCard();
+        }
+
+        // Dodajanje poslušalcev dogodkov
+        flipBtn.addEventListener('click', flipCard);
+        cardEl.addEventListener('click', flipCard); // Omogoči obrat s klikom na kartico
+        nextBtn.addEventListener('click', nextCard);
+        prevBtn.addEventListener('click', prevCard);
+
+        // Dodajanje poslušalcev za puščice na tipkovnici
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                prevCard();
+            } else if (event.key === 'ArrowRight') {
+                nextCard();
+            } else if (event.key === ' ' || event.key === 'Enter') { // Preslednica ali Enter za obrat
+                event.preventDefault(); // Prepreči privzeto obnašanje (npr. scroll)
+                flipCard();
+            }
+        });
+
+        // Začetni prikaz
+        if (totalCardsDisplay) {
+            totalCardsDisplay.textContent = flashcards.length;
+        }
+        displayCard();
+    </script>
+</body>
+</html>
