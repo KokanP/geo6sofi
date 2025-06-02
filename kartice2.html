@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaja: Vprašanja o Evropi (Anki Stil)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef2ff; /* Tailwind indigo-50 - very light indigo */
+            color: #1f2937; /* Tailwind gray-800 */
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .anki-app-container {
+            background-color: #ffffff; /* White background */
+            border-radius: 0.75rem; /* Tailwind rounded-xl */
+            padding: 2rem; /* Tailwind p-8 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Tailwind shadow-lg */
+            width: 100%;
+            max-width: 600px; /* Max width for the card container */
+            text-align: center;
+        }
+        .header-title {
+            font-size: 1.75rem; /* Tailwind text-2xl */
+            font-weight: 700; /* Tailwind font-bold */
+            color: #3730a3; /* Indigo-800 */
+            margin-bottom: 0.5rem;
+        }
+        .header-subtitle {
+            font-size: 0.9rem; /* Tailwind text-sm */
+            color: #4f46e5; /* Indigo-600 */
+            margin-bottom: 1.5rem;
+        }
+        .card-area {
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            min-height: 150px; /* Ensure some height for the card content */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .question-number-display {
+            font-size: 0.8rem;
+            color: #6366f1; /* Indigo-500 */
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .question-display {
+            font-size: 1.1rem;
+            color: #111827; /* Tailwind gray-900 */
+            margin-bottom: 1rem;
+            min-height: 50px; /* Space for question text */
+        }
+        .answer-display {
+            font-size: 1rem;
+            color: #1e293b; /* Tailwind slate-800, good contrast for answers */
+            background-color: #e0e7ff; /* Light indigo for answer background */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #c7d2fe; /* Tailwind indigo-200 border */
+            text-align: left; /* Answers might be longer, left align for readability */
+            min-height: 40px;
+        }
+        .buttons-container {
+            display: flex;
+            justify-content: space-between; /* Space out buttons */
+            gap: 1rem; /* Gap between buttons */
+            margin-top: 1rem;
+        }
+        .anki-btn {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-grow: 1; /* Make buttons take available space */
+        }
+        .anki-btn:hover {
+            background-color: #4338ca; /* Indigo-700 */
+        }
+        .anki-btn:active {
+            transform: scale(0.98);
+        }
+        .anki-btn:disabled {
+            background-color: #a5b4fc; /* Indigo-300 for disabled state */
+            cursor: not-allowed;
+        }
+        .hidden {
+            display: none;
+        }
+        .footer-text {
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+    </style>
+</head>
+<body>
+    <div class="anki-app-container">
+        <header>
+            <h1 class="header-title">Evropa: Kviz Kartice</h1>
+            <p class="header-subtitle">Preveri svoje znanje! Vprašanja so prikazana naključno.</p>
+        </header>
+
+        <div class="card-area">
+            <div id="questionNumber" class="question-number-display">Vprašanje 1 / 100</div>
+            <div id="questionText" class="question-display">Nalaganje vprašanja...</div>
+            <div id="answerText" class="answer-display hidden">Odgovor...</div>
+        </div>
+
+        <div class="buttons-container">
+            <button id="toggleAnswerBtn" class="anki-btn">Pokaži odgovor</button>
+            <button id="nextQuestionBtn" class="anki-btn">Naslednje vprašanje</button>
+        </div>
+         <div id="completionMessage" class="hidden" style="margin-top: 1.5rem; color: #16a34a; font-weight: bold;">
+            Čestitke! Prišli ste do konca vseh vprašanj. Osvežite stran za nov krog.
+        </div>
+    </div>
+
+    <footer class="footer-text">
+        <p>&copy; <span id="currentYear"></span> Pripravljeno za lažje učenje.</p>
+    </footer>
+
+    <script>
+        // Array of question-answer objects
+        const allQuestionsAndAnswers = [
+            { question: "Kateri polotok je najbolj razčlenjen del Evrope in je znan po velikem številu otokov? (Namig: Južna Evropa)", answer: "Balkanski polotok." },
+            { question: "Naštej vsaj tri morja, ki obdajajo Južno Evropo.", answer: "Sredozemsko morje, Jonsko morje, Tirensko morje. (Dodatno: Jadransko morje, Egejsko morje)" },
+            { question: "Kaj je značilno za sredozemsko podnebje in kako so se rastline prilagodile na poletne suše?", answer: "Značilna so vroča, suha poletja in mile, deževne zime. Rastline imajo usnjate/dlakave liste, trne, globoke korenine, so zimzelene (npr. makija)." },
+            { question: "Kateri dve državi Zahodne Evrope sta gospodarsko najrazvitejši?", answer: "Francija in Velika Britanija. (Tudi Nemčija, čeprav je v Srednji Evropi, je pogosto primerjana; zapiski omenjajo Španijo in Italijo kot najrazvitejši v Južni Evropi)." },
+            { question: "Kaj so polderji in v kateri državi Zahodne Evrope jih najdemo?", answer: "Polderji so obdelovalne površine in naselja, pridobljena z izsuševanjem morja ali jezer. Najdemo jih na Nizozemskem." },
+            { question: "Opiši polarni dan in polarno noč.", answer: "Polarni dan je obdobje, ko sonce več kot 24 ur ne zaide. Polarna noč je obdobje, ko sonce več kot 24 ur ne vzide." },
+            { question: "Katera skandinavska država je izjemno bogata z nahajališči nafte in zemeljskega plina?", answer: "Norveška (v Severnem in Norveškem morju)." },
+            { question: "Kako se imenuje najdaljša reka v Evropi in skozi katero državo večinoma teče?", answer: "Volga. Večinoma teče skozi Rusijo." },
+            { question: "Kaj je tajga in v katerem delu Evrope jo najdemo?", answer: "Tajga je obsežen iglasti gozd. Najdemo jo v Severni Evropi (npr. Finska, Švedska) in Vzhodni Evropi (Rusija)." },
+            { question: "Katera je bila posledica eksplozije jedrske elektrarne v Černobilu leta 1986?", answer: "Radioaktivno sevanje se je razširilo po Evropi, številne smrtne žrtve in bolezni, evakuacija in neposeljena okolica elektrarne." },
+            { question: "Katero gorovje se razteza čez večji del Apeninskega polotoka?", answer: "Apenini." },
+            { question: "Imenuj glavno mesto Španije.", answer: "Madrid." },
+            { question: "Kateri preliv povezuje Sredozemsko morje z Atlantskim oceanom?", answer: "Gibraltarski preliv." },
+            { question: "Kaj je Gibraltar in pod čigavo upravo spada?", answer: "Gibraltar je britansko čezmorsko ozemlje na južnem delu Pirenejskega polotoka." },
+            { question: "Opiši značilnosti Padske nižine (kje leži, po kateri reki je dobila ime).", answer: "Leži v severnem delu Italije, ime je dobila po reki Pad. Je največja italijanska nižina." },
+            { question: "Kaj so hudourniki in kdaj so najbolj nevarni?", answer: "Hudourniki so potoki ali reke v gorskih pokrajinah, ki ob močnem deževju hitro narastejo in lahko povzročijo poplave ter škodo. Najbolj nevarni so ob nenadnih, močnih padavinah." },
+            { question: "Kaj je makija?", answer: "Makija je gosto, zimzeleno sredozemsko grmičevje in nizko drevje, prilagojeno na sušo." },
+            { question: "Naštej vsaj dve prilagoditvi rastlin na sredozemsko podnebje.", answer: "Usnjati in trdi listi, majhni listi ali trni, globoke korenine, dlakavi listi." },
+            { question: "Zakaj Sredozemsko morje ni zelo bogato z ribami?", answer: "Zaradi majhne količine planktona in relativno visoke slanosti ter temperature vode." },
+            { question: "Naštej vsaj dva vzroka za onesnaženost Sredozemskega morja.", answer: "Ladijski promet (npr. Sueški prekop), množični turizem, odpadki iz velikih naselij, plastika." },
+            { question: "Kaj je magma in kaj lava?", answer: "Magma je vroča, staljena kamnina pod zemeljskim površjem. Lava je staljena kamnina, ki priteče na zemeljsko površje." },
+            { question: "Navedi primer aktivnega ognjenika v Evropi.", answer: "Etna (Sicilija, Italija), Stromboli (Italija)." },
+            { question: "Navedi primer spečega ognjenika v Evropi.", answer: "Vezuv (Italija), Yellowstone (ZDA – čeprav ni v Evropi, je omenjen v zapiskih kot speč)." },
+            { question: "Kdo so vulkanologi?", answer: "Strokovnjaki, ki preučujejo ognjenike, njihovo delovanje in poskušajo napovedati izbruhe." },
+            { question: "Kaj je demografska slika Južne Evrope glede na gostoto poselitve?", answer: "Gostota poselitve je neenakomerna, večja je ob obalah in v nižinah, z oddaljevanjem od morja pa upada." },
+            { question: "Kateri dve glavni jezikovni skupini prevladujeta v Južni Evropi?", answer: "Romanska in grška (kot del indoevropske)." },
+            { question: "Zakaj so pogoji za kmetijstvo v večjem delu Južne Evrope slabi?", answer: "Zaradi goratega površja, pomanjkanja vode (poletne suše) in ponekod revne prsti." },
+            { question: "Kaj je namakalno poljedelstvo?", answer: "Kmetovanje, pri katerem se polja umetno namakajo z vodo, da se zagotovi pridelek kljub pomanjkanju padavin." },
+            { question: "Katere so značilne kmetijske kulture Južne Evrope (naštej vsaj tri)?", answer: "Oljke, vinska trta, agrumi (pomaranče, limone), fige, pšenica, zelenjava." },
+            { question: "Kaj so kulturne terase in zakaj so jih gradili?", answer: "So stopničaste ravne površine, zgrajene na strmih pobočjih za kmetovanje. Gradili so jih za preprečevanje odnašanja prsti in lažje obdelovanje." },
+            { question: "Katera vrsta turizma je značilna za obalna območja Južne Evrope?", answer: "Množični (kopališki) turizem." },
+            { question: "Naštej vsaj dve pozitivni in dve negativni posledici turizma.", answer: "Pozitivne: gospodarski razvoj, nova delovna mesta, razvoj infrastrukture. Negativne: onesnaženost, prometna gneča, pretirana gradnja, poraba pitne vode, podražitve." },
+            { question: "Naštej države Beneluksa.", answer: "Belgija, Nizozemska, Luksemburg." },
+            { question: "Katero morje obliva večino obal Zahodne Evrope?", answer: "Atlantski ocean (in njegova robna morja, npr. Severno morje, Rokavski preliv)." },
+            { question: "Kaj so klifi in ob obalah katerih držav jih najdemo?", answer: "Klifi so strme, visoke obale, ki nastanejo z delovanjem valov. Najdemo jih ob obalah Velike Britanije, Irske, Francije." },
+            { question: "Kako Nizozemska pridobiva nova zemljišča iz morja?", answer: "Z gradnjo nasipov, s katerimi dele morja ločijo, nato pa vodo izčrpajo. Tako nastanejo polderji." },
+            { question: "Kakšno podnebje prevladuje v večjem delu Zahodne Evrope in kaj nanj vpliva?", answer: "Oceansko podnebje. Nanj vpliva Atlantski ocean (Severnoatlantski tok), ki prinaša mile zime, sveža poletja in padavine preko celega leta." },
+            { question: "Kateri dve glavni jezikovni skupini prevladujeta v Zahodni Evropi?", answer: "Romanska (npr. francoščina) in germanska (npr. angleščina, nizozemščina)." },
+            { question: "Kdaj se je v Zahodni Evropi začela industrijska revolucija?", answer: "Konec 18. stoletja (v Veliki Britaniji)." },
+            { question: "Katera vrsta industrije je danes vse pomembnejša v Zahodni Evropi?", answer: "Industrija visoke tehnologije." },
+            { question: "Imenuj največje pristanišče v Evropi.", answer: "Rotterdam (Nizozemska)." },
+            { question: "Kaj je Evrotunel in kateri dve državi povezuje?", answer: "Je 50,5 km dolg železniški predor pod Rokavskim prelivom, ki povezuje Veliko Britanijo (Anglijo) in Francijo." },
+            { question: "Naštej skandinavske države.", answer: "Norveška, Švedska, Danska. (Pogosto se prištevata tudi Finska in Islandija)." },
+            { question: "Naštej pribaltske države.", answer: "Estonija, Latvija, Litva." },
+            { question: "Katero gorovje ločuje Norveško in Švedsko?", answer: "Skandinavsko gorstvo." },
+            { question: "Kaj je Baltiški ščit in zakaj je pomemben?", answer: "Je najstarejši del Evrope, zgrajen iz zelo starih kamnin. Pomemben je zaradi zalog rud (železo, baker) in gozdov." },
+            { question: "Kaj so gejzirji in kje v Severni Evropi so značilni?", answer: "Gejzirji so izviri vroče vode in pare, ki periodično bruhajo. Značilni so za Islandijo." },
+            { question: "Kaj so fjordi in kako so nastali?", answer: "Fjordi so globoki in ozki morski zalivi s strmimi pobočji, ki segajo daleč v notranjost. Nastali so z delovanjem ledenikov, ki so poglobili rečne doline, te pa je po umiku ledu zalilo morje." },
+            { question: "Kakšno podnebje prevladuje na skrajnem severu Severne Evrope?", answer: "Tundrsko (subpolarno) podnebje." },
+            { question: "Kaj je permafrost?", answer: "Trajno zamrznjena tla, kjer se le zgornja plast poleti za kratek čas odtali." },
+            { question: "Imenuj vsaj dva velika otoka v Sredozemskem morju, ki pripadata Italiji.", answer: "Sicilija in Sardinija." },
+            { question: "Katero mesto je glavno mesto Portugalske?", answer: "Lizbona." },
+            { question: "Katero mesto je glavno mesto Grčije?", answer: "Atene." },
+            { question: "Kaj je značilno za površje Južne Evrope?", answer: "Zelo razgibano, gorato površje s številnimi polotoki in otoki." },
+            { question: "Katera so najpomembnejša gorovja v Južni Evropi poleg Apeninov?", answer: "Pireneji, Alpe (južni del), Dinarsko gorstvo, Pindsko gorstvo (Grčija), Rodopi." },
+            { question: "Opiši, kako nastanejo ognjeniki (vulkanski izbruhi) glede na premikanje litosferskih plošč.", answer: "Nastanejo na stikih litosferskih plošč, kjer se te razmikajo, podrivajo ali drsijo ena ob drugo, kar omogoča dvig magme na površje." },
+            { question: "Kakšna je razlika med delujočim, mirujočim (spečim) in ugaslim ognjenikom?", answer: "Delujoči stalno ali občasno bruhajo. Mirujoči že dalj časa niso delovali, a lahko ponovno izbruhnejo. Ugasli so prenehali delovati v daljni preteklosti." },
+            { question: "Katera država Južne Evrope je znana po izvozu olivnega olja, sadja in zelenjave?", answer: "Italija, Španija, Grčija." },
+            { question: "Zakaj je pomorski promet pomemben za države Južne Evrope?", answer: "Zaradi lege ob Sredozemskem morju, številnih pristanišč, trgovine in turizma." },
+            { question: "Navedi primer znanega pristaniškega mesta v Južni Evropi.", answer: "Genova (Italija), Marseille (Francija), Barcelona (Španija), Pirej (Grčija)." },
+            { question: "Imenuj vsaj dve pomembni reki v Franciji.", answer: "Sena, Loara, Rona, Garona." },
+            { question: "Kakšen je relief v osrednjem delu Francije?", answer: "Prevladujejo uravnana stara gorstva (npr. Centralni masiv) in nižine (npr. Pariška kotlina)." },
+            { question: "Katera država Zahodne Evrope je znana po pridelavi cvetja, zlasti tulipanov?", answer: "Nizozemska." },
+            { question: "Opiši oceansko podnebje, ki prevladuje v Zahodni Evropi.", answer: "Mile zime, sveža poletja, enakomerno razporejene padavine skozi vse leto, pogosti vetrovi." },
+            { question: "Kateri morski tok vpliva na milejše podnebje Zahodne Evrope?", answer: "Severnoatlantski tok (topli zalivski tok)." },
+            { question: "Katera keltska ljudstva živijo v Veliki Britaniji?", answer: "Škoti, Valižani, Irci (na Severnem Irskem in Irskem). Tudi Kornijci." },
+            { question: "Zakaj so se po drugi svetovni vojni v države Zahodne Evrope priseljevali ljudje iz nekdanjih kolonij?", answer: "Zaradi pomanjkanja delovne sile v Zahodni Evropi in iskanja boljših življenjskih pogojev s strani priseljencev." },
+            { question: "Katera gospodarska dejavnost danes zaposluje večino prebivalstva v Zahodni Evropi?", answer: "Storitvene dejavnosti (turizem, trgovina, promet, finance)." },
+            { question: "Kako dolgo traja vožnja skozi Evrotunel?", answer: "Približno 35 minut." },
+            { question: "Imenuj glavno mesto Velike Britanije.", answer: "London." },
+            { question: "Imenuj glavno mesto Francije.", answer: "Pariz." },
+            { question: "Imenuj glavno mesto Irske.", answer: "Dublin." },
+            { question: "Kateri je najstarejši del Evrope in kje se nahaja?", answer: "Baltiški ščit, ki se nahaja v Severni Evropi (Finska, Švedska, Norveška)." },
+            { question: "Katere surovine so značilne za območje Baltiškega ščita?", answer: "Železova ruda, bakrova ruda, les, vodna energija." },
+            { question: "Zakaj je Islandija ognjeniško zelo aktivno območje?", answer: "Ker leži na stiku Evrazijske in Severnoameriške litosferske plošče (Srednjeatlantski hrbet)." },
+            { question: "Kaj so ledeniške morene?", answer: "So gradivo (kamenje, pesek, glina), ki ga ledenik odlaga med svojim premikanjem ali ob taljenju." },
+            { question: "Zakaj so fjordi pomembni za Norveško, a hkrati predstavljajo oviro?", answer: "Pomembni so za plovbo, turizem, ribogojstvo. Oviro predstavljajo za gradnjo cestnega in železniškega omrežja." },
+            { question: "Kaj je tundra in kakšno rastlinstvo tam uspeva?", answer: "Tundra je brezlesna pokrajina v subpolarnem pasu. Uspevajo lišaji, mahovi, nizko grmičevje in pritlikava drevesa." },
+            { question: "Katera je glavna značilnost zmerno hladnega podnebja v Severni Evropi?", answer: "Dolge, mrzle zime in kratka, sveža poletja. Temperature so le nekaj mesecev nad 10°C." },
+            { question: "Katere tri jezikovne skupine najdemo v Severni Evropi?", answer: "Germanska (Danci, Norvežani, Švedi, Islandci), ugrofinska (Finci, Estonci, Samiji/Lapinci), baltska (Latvijci, Litovci - čeprav so pribaltske države)." },
+            { question: "S čim so se tradicionalno preživljali Lapinci (Sami)?", answer: "Z lovom, ribolovom in rejo severnih jelenov." },
+            { question: "Zakaj je območje Severnega Atlantika bogato z ribami?", answer: "Zaradi mešanja toplega Severnoatlantskega toka in hladnih arktičnih voda, kar ustvarja ugodne pogoje za plankton." },
+            { question: "Katera država Severne Evrope večino svoje električne energije pridobi iz hidroelektrarn?", answer: "Norveška." },
+            { question: "Kako Islandija izkorišča geotermalno energijo?", answer: "Za ogrevanje stanovanj, rastlinjakov, bazenov in za proizvodnjo električne energije." },
+            { question: "Katera pribaltska država je bila v preteklosti močno usmerjena v kmetijstvo, po osamosvojitvi pa je doživela gospodarsko krizo in nato okrevanje?", answer: "Vse tri pribaltske države (Estonija, Latvija, Litva) so doživele tranzicijo, Estonija je znana po hitrem digitalnem razvoju." },
+            { question: "Katera država zavzema največji del Vzhodne Evrope?", answer: "Rusija (njen evropski del)." },
+            { question: "Katero gorovje predstavlja naravno mejo med Evropo in Azijo na območju Rusije?", answer: "Ural." },
+            { question: "Opiši celinsko podnebje, ki prevladuje v Vzhodni Evropi.", answer: "Vroča poletja, mrzle zime, velike temperaturne razlike med letnimi časi, količina padavin se zmanjšuje proti vzhodu." },
+            { question: "Kaj je stepa?", answer: "Stepa je travnata pokrajina z malo padavinami, brez dreves, značilna za celinsko podnebje." },
+            { question: "Katera reka je najdaljša v Evropi in se izliva v Kaspijsko jezero?", answer: "Volga." },
+            { question: "Zakaj je reka Volga pomembna za Rusijo?", answer: "Za promet (povezava s prekopi), proizvodnjo električne energije (hidroelektrarne), namakanje." },
+            { question: "Zakaj je severni del Vzhodne Evrope redko poseljen?", answer: "Zaradi slabih naravnih pogojev (nizke temperature, permafrost, kratka rastna doba)." },
+            { question: "Katera je prevladujoča jezikovna skupina v Vzhodni Evropi?", answer: "Slovanska (npr. Rusi, Ukrajinci, Belorusi). Moldavci spadajo v romansko skupino." },
+            { question: "Kateri polotok v Črnem morju je bil predmet spora med Ukrajino in Rusijo?", answer: "Krim." },
+            { question: "Katera država Vzhodne Evrope je znana po rodovitni prsti, imenovani črnozjom?", answer: "Ukrajina, južni del Rusije." },
+            { question: "Kakšne so bile posledice razpada Sovjetske zveze za industrijo v novonastalih državah Vzhodne Evrope?", answer: "Propad številnih podjetij (zlasti težke industrije), brezposelnost, odseljevanje, preusmeritev gospodarstva." },
+            { question: "Kje se je zgodila najhujša jedrska nesreča v zgodovini in v kateri državi?", answer: "V Černobilu, v Ukrajini (takrat del Sovjetske zveze)." },
+            { question: "Imenuj glavno mesto Rusije.", answer: "Moskva." },
+            { question: "Imenuj glavno mesto Ukrajine.", answer: "Kijev." },
+            { question: "Kaj je značilno za relief Vzhodne Evrope?", answer: "Pretežno nižinski (Vzhodnoevropsko nižavje), prekinjen s hribovji in starimi gorstvi (Ural)." },
+            { question: "Katera naravna vegetacijska cona prevladuje v severnem delu Vzhodne Evrope, južno od tundre?", answer: "Tajga (iglasti gozd)." }
+        ];
+
+
+        let shuffledQuestions = [];
+        let currentQuestionIndex = 0;
+
+        const questionTextElement = document.getElementById('questionText');
+        const answerTextElement = document.getElementById('answerText');
+        const questionNumberElement = document.getElementById('questionNumber');
+        const toggleAnswerBtn = document.getElementById('toggleAnswerBtn');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const completionMessageElement = document.getElementById('completionMessage');
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                const currentQA = shuffledQuestions[currentQuestionIndex];
+                questionTextElement.textContent = currentQA.question;
+                answerTextElement.classList.add('hidden');
+                answerTextElement.textContent = currentQA.answer; // Set the actual answer here
+                toggleAnswerBtn.textContent = 'Pokaži odgovor';
+                questionNumberElement.textContent = `Vprašanje ${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+                toggleAnswerBtn.disabled = false;
+                nextQuestionBtn.disabled = false;
+                completionMessageElement.classList.add('hidden');
+            } else {
+                // End of questions
+                questionTextElement.textContent = 'Konec vprašanj!';
+                answerTextElement.classList.add('hidden');
+                questionNumberElement.textContent = `Opravljeno: ${shuffledQuestions.length} / ${shuffledQuestions.length}`;
+                toggleAnswerBtn.disabled = true;
+                nextQuestionBtn.disabled = true;
+                completionMessageElement.classList.remove('hidden');
+            }
+        }
+
+        toggleAnswerBtn.addEventListener('click', () => {
+            answerTextElement.classList.toggle('hidden');
+            if (answerTextElement.classList.contains('hidden')) {
+                toggleAnswerBtn.textContent = 'Pokaži odgovor';
+            } else {
+                toggleAnswerBtn.textContent = 'Skrij odgovor';
+            }
+        });
+
+        nextQuestionBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        });
+
+        // Initialize
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        shuffledQuestions = [...allQuestionsAndAnswers]; // Use the new array with answers
+        shuffleArray(shuffledQuestions);
+        loadQuestion();
+
+    </script>
+</body>
+</html>
