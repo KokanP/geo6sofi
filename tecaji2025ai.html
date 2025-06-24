@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poletje Ustvarjanja 2025 | Interaktivni Vodnik z AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Muted Teal -->
+    <!-- Application Structure Plan: A single-page application designed as an interactive dashboard. The core is a filterable grid of course 'cards'. This structure was chosen over a linear document to empower users to immediately find relevant information based on their specific interests (art, tech, performance) and budget. Key interactions include: 1) Filtering by category and price to narrow down choices. 2) Searching by keyword for specific interests (e.g., 'manga'). 3) Clicking a card to open a modal with detailed information, preventing context loss. 4) An interactive chart provides a quick visual summary of costs. 5) ✨ Gemini API Integration: A new feature inside the modal generates a personalized weekly plan for the selected course, making the experience more tangible and engaging. This non-linear, task-oriented approach is far more efficient for a user goal of 'finding the right course'. -->
+    <!-- Visualization & Content Choices: 1. Main Content (Courses): Report Info -> Full list of courses with details. Goal -> Allow users to explore and compare options. Viz/Presentation -> Interactive cards in a responsive grid. Interaction -> Click to open a detail modal, filter/sort controls. Justification -> A card layout is scannable and familiar. Modals provide deep information without navigation. Library -> HTML/CSS/JS. 2. Price Comparison: Report Info -> Prices for all courses. Goal -> Provide a quick overview of the relative cost of different creative fields. Viz/Presentation -> Horizontal Bar Chart. Interaction -> Hover tooltips show precise average price. Justification -> A bar chart is the clearest way to compare quantitative values. Library -> Chart.js. 3. ✨ AI-Powered Itinerary: Report Info -> Course details (name, focus, schedule). Goal -> Provide a personalized, engaging narrative of a week at the course. Viz/Presentation -> Dynamically generated text content within the modal. Interaction -> User clicks a button to trigger generation. Justification -> Adds significant value beyond static data, helping users visualize the experience. Library -> Gemini API. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .bg-warm-beige { background-color: #F5F5DC; }
+        .bg-light-beige { background-color: #FAF3E0; }
+        .text-teal-dark { color: #004D40; }
+        .text-teal-normal { color: #00796B; }
+        .bg-teal-light { background-color: #B2DFDB; }
+        .bg-teal-accent { background-color: #00796B; }
+        .hover-bg-teal-dark:hover { background-color: #004D40; }
+        .border-teal-normal { border-color: #00796B; }
+        .shadow-custom { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07); }
+        .modal { transition: opacity 0.3s ease; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 50vh; }
+        @media (min-width: 768px) { .chart-container { height: 450px; } }
+        .gemini-output { white-space: pre-wrap; }
+        .gemini-output h3 { font-size: 1.25rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #004D40; }
+        .gemini-output ul { list-style-type: disc; margin-left: 1.5rem; }
+        .gemini-output strong { font-weight: 700; color: #00796B; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00796B;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-warm-beige text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-teal-dark mb-2">Poletje Ustvarjanja 2025</h1>
+            <p class="text-lg text-teal-normal max-w-3xl mx-auto">Interaktivni vodnik po najboljših ustvarjalnih tečajih za mladostnike (13+) v Ljubljani, izboljšan z AI.</p>
+        </header>
+
+        <main>
+            <section id="filters" class="bg-light-beige p-6 rounded-lg shadow-custom mb-8">
+                <h2 class="text-2xl font-bold text-teal-dark mb-4">Poišči svoj tečaj</h2>
+                 <p class="text-gray-600 mb-6">Uporabite filtre, da najdete popolno poletno ustvarjalno izkušnjo. Kombinirajte kategorije, prilagodite ceno ali iščite po ključnih besedah, kot so "manga", "kiparstvo" ali "programiranje".</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">Kategorija</label>
+                        <select id="category-filter" class="w-full p-2 border border-teal-normal rounded-md shadow-sm focus:ring-teal-dark focus:border-teal-dark">
+                            <option value="all">Vse kategorije</option>
+                            <option value="Umetnost">🎨 Vizualne & Uporabne Umetnosti</option>
+                            <option value="Tehnologija">💻 Tehnologija, Dizajn & Mediji</option>
+                            <option value="Oder">🎭 Oder & Studio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="price-filter" class="block text-sm font-medium text-gray-700 mb-1">Cena do: <span id="price-value" class="font-bold text-teal-normal">400€</span></label>
+                        <input type="range" id="price-filter" min="0" max="400" value="400" class="w-full h-2 bg-teal-light rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <label for="search-filter" class="block text-sm font-medium text-gray-700 mb-1">Iskanje po ključni besedi</label>
+                        <input type="text" id="search-filter" placeholder="Npr. film, kitara, 3D..." class="w-full p-2 border border-teal-normal rounded-md shadow-sm focus:ring-teal-dark focus:border-teal-dark">
+                    </div>
+                </div>
+            </section>
+            
+            <section id="results-info" class="text-center mb-4">
+                 <p id="results-count" class="text-lg text-gray-700"></p>
+            </section>
+
+            <section id="courses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </section>
+
+            <section id="analysis" class="bg-light-beige p-6 rounded-lg shadow-custom mt-12">
+                <h2 class="text-2xl font-bold text-teal-dark mb-4 text-center">Primerjava Stroškov Po Področjih</h2>
+                <p class="text-gray-600 mb-6 max-w-3xl mx-auto text-center">Ta grafikon prikazuje povprečno ceno tedenskega programa (preračunano) za vsako glavno kategorijo. To vam lahko pomaga pri razumevanju, katera področja so v povprečju cenovno bolj dostopna. Upoštevajte, da gre za povprečje; cene posameznih tečajev se lahko močno razlikujejo.</p>
+                <div class="chart-container">
+                    <canvas id="price-chart"></canvas>
+                </div>
+            </section>
+            
+            <section id="recommendations" class="mt-12">
+                <h2 class="text-2xl font-bold text-teal-dark mb-4 text-center">Katera pot je prava zate?</h2>
+                 <p class="text-gray-600 mb-8 max-w-3xl mx-auto text-center">Niste prepričani, kje začeti? Kliknite na profil, ki najbolj ustreza vašemu najstniku, in poglejte naša priporočila. To bo poudarilo tečaje, ki so morda najbolj primerni.</p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button data-profile="umetnik" class="profile-btn bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors">🎨 Bodoči umetnik</button>
+                    <button data-profile="tehnolog" class="profile-btn bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors">💻 Tehno navdušenec</button>
+                    <button data-profile="nastopac" class="profile-btn bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors">🎭 Rojen nastopač</button>
+                    <button data-profile="raziskovalec" class="profile-btn bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors">🧭 Radovedni raziskovalec</button>
+                     <button data-profile="all" class="profile-btn bg-gray-400 text-white px-6 py-3 rounded-full shadow-md hover:bg-gray-500 transition-colors">Pokaži vse</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div id="modal-content" class="bg-light-beige rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 id="modal-title" class="text-2xl md:text-3xl font-bold text-teal-dark"></h2>
+                      <p id="modal-provider" class="text-md text-teal-normal"></p>
+                    </div>
+                    <button id="modal-close" class="text-3xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6 text-sm">
+                    <div class="flex items-center space-x-2"><span class="font-bold text-lg">📅</span><span id="modal-dates"></span></div>
+                    <div class="flex items-center space-x-2"><span class="font-bold text-lg">🎂</span><span id="modal-age"></span></div>
+                    <div class="flex items-center space-x-2"><span class="font-bold text-lg">⏳</span><span id="modal-duration"></span></div>
+                    <div class="flex items-center space-x-2"><span class="font-bold text-lg">📍</span><span id="modal-location"></span></div>
+                </div>
+                <div class="prose max-w-none text-gray-700">
+                    <p id="modal-description"></p>
+                    <p id="modal-insight" class="border-l-4 border-teal-normal bg-white p-4 rounded-r-lg italic"></p>
+                </div>
+
+                <div id="gemini-feature" class="mt-6 pt-6 border-t border-teal-light">
+                    <h3 class="text-xl font-bold text-teal-dark mb-3">Tvoj AI Asistent</h3>
+                    <p class="text-gray-600 mb-4">Se sprašuješ, kako bi izgledal teden na tem tečaju? Klikni spodaj in umetna inteligenca bo zate ustvarila zabaven in personaliziran načrt!</p>
+                    <button id="gemini-generate-btn" class="w-full bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors flex items-center justify-center gap-2">
+                        <span>✨</span>
+                        <span>Ustvari osebni načrt</span>
+                    </button>
+                    <div id="gemini-loader" class="hidden mt-4 flex justify-center items-center gap-3">
+                        <div class="loader"></div>
+                        <span class="text-teal-normal">AI razmišlja... Prosim, počakajte.</span>
+                    </div>
+                    <div id="gemini-output-container" class="mt-4 p-4 bg-white rounded-lg shadow-inner hidden">
+                    </div>
+                </div>
+
+            </div>
+             <div class="bg-white px-6 py-4 border-t border-gray-200 sticky bottom-0">
+                 <div class="flex flex-col sm:flex-row justify-between items-center">
+                    <p class="text-2xl font-bold text-teal-dark mb-2 sm:mb-0" id="modal-price"></p>
+                    <a id="modal-link" href="#" target="_blank" class="w-full sm:w-auto text-center bg-teal-accent text-white px-6 py-3 rounded-full shadow-md hover-bg-teal-dark transition-colors">Obišči stran ponudnika</a>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const coursesData = [
+    {
+        id: 1,
+        provider: "ZOTKS & Fakulteta za arhitekturo",
+        name: "Poletna šola arhitekture",
+        focus: "Arhitektura, urbanizem, prostorsko oblikovanje, maketarstvo.",
+        age: "12–15 let",
+        age_min: 12,
+        age_max: 15,
+        dates: "26. 6.–27. 6. 2025",
+        duration: "2 dni, 9:00–16:00",
+        location: "Fakulteta za arhitekturo, Zoisova 12, Ljubljana",
+        price: 65,
+        link: "https://www.zotks.si/",
+        insight: "Idealno za karierno raziskovanje; edinstven vpogled v študij in poklic arhitekta.",
+        category: "Tehnologija",
+        profile: "tehnolog"
+    },
+    {
+        id: 2,
+        provider: "ZOTKS & ALUO",
+        name: "Poletna delavnica stekla",
+        focus: "Oblikovanje stekla (tople in hladne tehnike), risanje, graviranje.",
+        age: "12–18 let",
+        age_min: 12,
+        age_max: 18,
+        dates: "1. 7.–4. 7. 2025",
+        duration: "4 dni, 9:30–15:00",
+        location: "ALUO, Dolenjska cesta 83, Ljubljana",
+        price: 150,
+        link: "https://www.zotks.si/",
+        insight: "Redka priložnost za delo s steklom v profesionalnem okolju akademije.",
+        category: "Umetnost",
+        profile: "umetnik"
+    },
+    {
+        id: 3,
+        provider: "Narodna galerija",
+        name: "Poletne manga delavnice",
+        focus: "Risanje v manga stilu, navdihnjeno z baročno umetnostjo.",
+        age: "12+ let",
+        age_min: 12,
+        age_max: 99,
+        dates: "Julij in avgust (več 5-dnevnih terminov)",
+        duration: "5 dni, 10:00–15:00",
+        location: "Narodna galerija, Puharjeva ulica 9, Ljubljana",
+        price: 125,
+        link: "https://www.ng-slo.si/",
+        insight: "Inovativno povezovanje klasične umetnosti in popularne mladinske subkulture.",
+        category: "Umetnost",
+        profile: "umetnik"
+    },
+    {
+        id: 4,
+        provider: "Muzikaviva",
+        name: "Band Camp",
+        focus: "Igranje v bendu, individualni pouk inštrumenta/petja, snemanje v studiu.",
+        age: "7–17 let",
+        age_min: 7,
+        age_max: 17,
+        dates: "1. 7.–5. 7. & 4. 8.–9. 8. 2025",
+        duration: "5 dni, celodnevni program",
+        location: "Trebinjska ul. 3, Ljubljana",
+        price: 350,
+        link: "https://muzikaviva.si/",
+        insight: "Celostna izkušnja 'biti v bendu', od vaj do profesionalnega posnetka.",
+        category: "Oder",
+        profile: "nastopac"
+    },
+    {
+        id: 5,
+        provider: "Mladi zmaji",
+        name: "Zmajska šivalnica",
+        focus: "5-dnevni tečaj šivanja, oblikovanje lastnih modnih izdelkov.",
+        age: "12–29 let",
+        age_min: 12,
+        age_max: 29,
+        dates: "4. 8.–8. 8. 2025",
+        duration: "5 dni, 9:00–15:00",
+        location: "Mladi zmaji Golovec, Pesarska cesta 14",
+        price: 91,
+        link: "https://mladizmaji.si/",
+        insight: "Praktična in ustvarjalna veščina, ki se povezuje s trendom trajnosti.",
+        category: "Umetnost",
+        profile: "raziskovalec"
+    },
+    {
+        id: 6,
+        provider: "Center Rog",
+        name: "Ustvarjalnica v FabLab-u",
+        focus: "Uporaba sodobne tehnologije (3D-tisk, lasersko rezanje) za ustvarjanje.",
+        age: "12–17 let",
+        age_min: 12,
+        age_max: 17,
+        dates: "Julij–september (več terminov)",
+        duration: "Večdnevne delavnice",
+        location: "Center Rog, Trubarjeva 72, Ljubljana",
+        price: 80,
+        link: "https://center-rog.si/",
+        insight: "Odličen uvod v 'maker' kulturo in uporabo profesionalnih digitalnih orodij.",
+        category: "Tehnologija",
+        profile: "tehnolog"
+    },
+    {
+        id: 7,
+        provider: "Slikarska šola",
+        name: "Poletni tečaj risanja in slikanja",
+        focus: "Klasične tehnike risanja in slikanja (akril, olje, pasteli).",
+        age: "Mladina & odrasli",
+        age_min: 12,
+        age_max: 99,
+        dates: "Tedenski termini (30. 6.–29. 8. 2025)",
+        duration: "5 dni, 3 šolske ure/dan",
+        location: "Atelje Slikarske šole",
+        price: 150,
+        link: "https://slikarskasola.com/",
+        insight: "Poudarek na individualnem delu v majhnih skupinah, primerno za vse stopnje znanja.",
+        category: "Umetnost",
+        profile: "umetnik"
+    },
+    {
+        id: 8,
+        provider: "Dramska šola Satirikon",
+        name: "Poletna igralska šola",
+        focus: "Gledališka in filmska igra po sistemu Stanislavskega, improvizacija.",
+        age: "5.–9. razred OŠ (pribl. 10-15 let)",
+        age_min: 10,
+        age_max: 15,
+        dates: "Poletje 2025",
+        duration: "En teden, intenzivno",
+        location: "Lokacija v Ljubljani",
+        price: 180,
+        link: "http://www.igralskaolasatirikon.eu/",
+        insight: "Poglobljen in strokoven pristop k igri, idealen za razvoj samozavesti.",
+        category: "Oder",
+        profile: "nastopac"
+    },
+    {
+        id: 9,
+        provider: "NIČ ART",
+        name: "Tematske likovne delavnice",
+        focus: "Kratke delavnice: kiparstvo, risanje, tekstil, keramika.",
+        age: "Najstniki",
+        age_min: 12,
+        age_max: 18,
+        dates: "Julij, avgust (različni datumi)",
+        duration: "2–4 ure na delavnico",
+        location: "Atelje NIČ ART",
+        price: 60,
+        link: "https://nicart.si/",
+        insight: "Fleksibilen in modularen pristop, omogoča preizkušanje več različnih tehnik.",
+        category: "Umetnost",
+        profile: "raziskovalec"
+    },
+    {
+        id: 10,
+        provider: "Digital School",
+        name: "Poletna šola programiranja",
+        focus: "Uvod v programiranje skozi praktične projekte.",
+        age: "10-16 let",
+        age_min: 10,
+        age_max: 16,
+        dates: "Več terminov v juliju in avgustu",
+        duration: "5 dni",
+        location: "Ljubljana",
+        price: 250,
+        link: "https://www.digitalschool.si/",
+        insight: "Strukturiran uvod v ključno veščino prihodnosti v spodbudnem okolju.",
+        category: "Tehnologija",
+        profile: "tehnolog"
+    }
+];
+
+const categoryIcons = { 'Umetnost': '🎨', 'Tehnologija': '💻', 'Oder': '🎭' };
+
+const coursesGrid = document.getElementById('courses-grid');
+const categoryFilter = document.getElementById('category-filter');
+const priceFilter = document.getElementById('price-filter');
+const priceValue = document.getElementById('price-value');
+const searchFilter = document.getElementById('search-filter');
+const resultsCount = document.getElementById('results-count');
+
+const modal = document.getElementById('modal');
+const modalContent = document.getElementById('modal-content');
+const modalClose = document.getElementById('modal-close');
+const modalTitle = document.getElementById('modal-title');
+const modalProvider = document.getElementById('modal-provider');
+const modalDates = document.getElementById('modal-dates');
+const modalAge = document.getElementById('modal-age');
+const modalDuration = document.getElementById('modal-duration');
+const modalLocation = document.getElementById('modal-location');
+const modalDescription = document.getElementById('modal-description');
+const modalInsight = document.getElementById('modal-insight');
+const modalPrice = document.getElementById('modal-price');
+const modalLink = document.getElementById('modal-link');
+
+const geminiGenerateBtn = document.getElementById('gemini-generate-btn');
+const geminiLoader = document.getElementById('gemini-loader');
+const geminiOutputContainer = document.getElementById('gemini-output-container');
+let currentCourseForGemini = null;
+
+function renderCourses(filteredCourses) {
+    coursesGrid.innerHTML = '';
+    if (filteredCourses.length === 0) {
+        resultsCount.textContent = 'Za izbrane kriterije ni najdenih tečajev. Poskusite razširiti iskanje.';
+    } else {
+        resultsCount.textContent = `Prikazanih ${filteredCourses.length} od ${coursesData.length} tečajev.`;
+    }
+
+    filteredCourses.forEach(course => {
+        const card = document.createElement('div');
+        card.className = 'bg-light-beige rounded-lg shadow-custom overflow-hidden flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+        card.dataset.id = course.id;
+        
+        card.innerHTML = `
+            <div class="p-5 flex-grow">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-xl font-bold text-teal-dark">${course.name}</h3>
+                    <span class="text-2xl">${categoryIcons[course.category] || '✨'}</span>
+                </div>
+                <p class="text-sm text-teal-normal mb-3">${course.provider}</p>
+                <p class="text-gray-600 text-sm mb-4">${course.focus}</p>
+            </div>
+            <div class="bg-white p-4 border-t border-gray-200">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-600">📅 ${course.dates}</span>
+                    <span class="text-lg font-bold text-teal-dark">${course.price}€</span>
+                </div>
+            </div>
+        `;
+        
+        card.addEventListener('click', () => openModal(course.id));
+        coursesGrid.appendChild(card);
+    });
+}
+
+function openModal(courseId) {
+    const course = coursesData.find(c => c.id === courseId);
+    if (!course) return;
+
+    currentCourseForGemini = course;
+
+    modalTitle.textContent = course.name;
+    modalProvider.textContent = course.provider;
+    modalDates.textContent = course.dates;
+    modalAge.textContent = course.age;
+    modalDuration.textContent = course.duration;
+    modalLocation.textContent = course.location;
+    modalDescription.textContent = course.focus;
+    modalInsight.textContent = course.insight;
+    modalPrice.textContent = `${course.price}€`;
+    modalLink.href = course.link;
+
+    geminiOutputContainer.innerHTML = '';
+    geminiOutputContainer.classList.add('hidden');
+    geminiGenerateBtn.disabled = false;
+    geminiGenerateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modalContent.classList.remove('scale-95');
+}
+
+function closeModal() {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalContent.classList.add('scale-95');
+    currentCourseForGemini = null;
+}
+
+function filterAndRender() {
+    const category = categoryFilter.value;
+    const price = Number(priceFilter.value);
+    const searchTerm = searchFilter.value.toLowerCase();
+    
+    let filteredCourses = coursesData.filter(course => {
+        const matchesCategory = category === 'all' || course.category === category;
+        const matchesPrice = course.price <= price;
+        const matchesSearch = searchTerm === '' || 
+                              course.name.toLowerCase().includes(searchTerm) ||
+                              course.provider.toLowerCase().includes(searchTerm) ||
+                              course.focus.toLowerCase().includes(searchTerm);
+        const isForTeen = (course.age_min <= 13 && course.age_max >= 13);
+        
+        return matchesCategory && matchesPrice && matchesSearch && isForTeen;
+    });
+    
+    renderCourses(filteredCourses);
+}
+
+function highlightProfile(profile) {
+    const allCards = document.querySelectorAll('#courses-grid > div');
+    if(profile === 'all') {
+        allCards.forEach(card => {
+            card.classList.remove('opacity-30', 'border-4', 'border-teal-accent');
+        });
+        return;
+    }
+    allCards.forEach(card => {
+        const courseId = parseInt(card.dataset.id);
+        const course = coursesData.find(c => c.id === courseId);
+        if (course.profile === profile || profile === 'raziskovalec') {
+             card.classList.remove('opacity-30');
+             card.classList.add('border-4', 'border-teal-accent');
+        } else {
+             card.classList.add('opacity-30');
+             card.classList.remove('border-4', 'border-teal-accent');
+        }
+    });
+}
+
+function simpleMarkdownToHtml(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<li>$1</li>')
+        .replace(/(\r\n|\n|\r)/g, '<br>')
+        .replace(/<br><li>/g, '<li>')
+        .replace(/<\/li><br>/g, '</li>')
+        .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>')
+        .replace(/<\/ul><br><ul>/g, '');
+}
+
+
+async function generatePersonalizedPlan() {
+    if (!currentCourseForGemini) return;
+
+    geminiLoader.classList.remove('hidden');
+    geminiGenerateBtn.disabled = true;
+    geminiGenerateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    geminiOutputContainer.classList.add('hidden');
+    geminiOutputContainer.innerHTML = '';
+
+    const { name, focus, duration } = currentCourseForGemini;
+    const prompt = `Imagine you are a fun and encouraging mentor for a 13-year-old. Create a sample daily plan for them attending a creative course. The output must be in Slovenian. Use Markdown for formatting (bolding with **, lists with *). Be creative and make it sound exciting!
+
+Course Details:
+- Name: ${name}
+- Focus: ${focus}
+- Schedule: ${duration}
+
+Based on this, generate a plan. Start with a catchy title. For each day (or a sample day if it's a multi-day course), include:
+1.  A "Jutranji zagon" (Morning Boost) section with tips on what to wear or bring.
+2.  A "Med ustvarjanjem" (During Creation) section imagining what they might do.
+3.  An "Ideja za po kosilu" (After-Lunch Idea) section for the break.
+4.  A "Zaključek dneva" (End of Day) section with a tip on how to remember what they learned.
+Make it personal and inspiring.`;
+
+    try {
+        let chatHistory = [];
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        const payload = { contents: chatHistory };
+        const apiKey = ""
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts.length > 0) {
+            const generatedText = result.candidates[0].content.parts[0].text;
+            geminiOutputContainer.innerHTML = simpleMarkdownToHtml(generatedText);
+        } else {
+            throw new Error("Invalid response structure from API.");
+        }
+    } catch (error) {
+        console.error("Gemini API Error:", error);
+        geminiOutputContainer.innerHTML = '<p class="text-red-600">Ups! Prišlo je do napake pri pogovoru z našim AI asistentom. Poskusite znova kasneje.</p>';
+    } finally {
+        geminiLoader.classList.add('hidden');
+        geminiOutputContainer.classList.remove('hidden');
+    }
+}
+
+
+priceFilter.addEventListener('input', (e) => {
+    priceValue.textContent = `${e.target.value}€`;
+    filterAndRender();
+});
+
+categoryFilter.addEventListener('change', filterAndRender);
+searchFilter.addEventListener('keyup', filterAndRender);
+
+modalClose.addEventListener('click', closeModal);
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+geminiGenerateBtn.addEventListener('click', generatePersonalizedPlan);
+
+document.querySelectorAll('.profile-btn').forEach(button => {
+    button.addEventListener('click', (e) => {
+        highlightProfile(e.target.dataset.profile);
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    filterAndRender();
+    renderPriceChart();
+});
+
+function renderPriceChart() {
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    
+    const categories = ['Umetnost', 'Tehnologija', 'Oder'];
+    const avgPrices = categories.map(cat => {
+        const coursesInCategory = coursesData.filter(c => c.category === cat);
+        if (coursesInCategory.length === 0) return 0;
+        const total = coursesInCategory.reduce((sum, course) => {
+            let weeklyPrice = course.price;
+            const durationDays = parseInt(course.duration.split(' ')[0]) || 5;
+            if (durationDays < 5 && durationDays > 0) {
+                 weeklyPrice = (course.price / durationDays) * 5;
+            } else if (course.duration.includes('uri')) {
+                 weeklyPrice = course.price * (15 / (parseInt(course.duration.split(' ')[0]) || 3));
+            }
+            return sum + weeklyPrice;
+        }, 0);
+        return Math.round(total / coursesInCategory.length);
+    });
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categories.map(c => `${categoryIcons[c]} ${c}`),
+            datasets: [{
+                label: 'Povprečna cena 5-dnevnega programa (€)',
+                data: avgPrices,
+                backgroundColor: [ 'rgba(0, 121, 107, 0.6)', 'rgba(0, 77, 64, 0.6)', 'rgba(178, 223, 219, 0.8)' ],
+                borderColor: [ 'rgb(0, 121, 107)', 'rgb(0, 77, 64)', 'rgb(178, 223, 219)' ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            scales: { x: { beginAtZero: true, title: { display: true, text: 'Cena v EUR (€)' } } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed.x !== null) {
+                                label += new Intl.NumberFormat('sl-SI', { style: 'currency', currency: 'EUR' }).format(context.parsed.x);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
